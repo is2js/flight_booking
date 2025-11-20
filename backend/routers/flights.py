@@ -1,0 +1,81 @@
+from fastapi import APIRouter, HTTPException, Query, Depends
+from typing import Annotated
+from backend.external_services.flight import amadeus_flight_service
+from backend.models.users import UserInDB
+from backend.schemas.flight_order import FlightOrderRequest
+from backend.schemas.flight_price_confirm import FlightOffer
+from backend.schemas.flight_search import (
+    FlightSearchRequestPost,
+    FlightSearchRequestGet,
+)
+from backend.schemas.flights import FlightSearchResponse
+from backend.utils.security import get_current_user
+
+router = APIRouter()
+
+
+@router.get("/flights/")
+async def read_flights():
+    return {"message": "Flights"}
+
+
+@router.post("/shopping/flight-offers", response_model=FlightSearchResponse)
+async def search_flights(request: FlightSearchRequestPost):
+    try:
+        request_body = request.model_dump()
+        # TODO: Search in cache first (REDIS)
+
+        response = amadeus_flight_service.search_flights(request_body)
+        return response
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Flight search failed: {str(e)}")
+
+
+@router.get("/shopping/flight-offers")
+async def search_flights2(request: Annotated[FlightSearchRequestGet, Query()]):
+    try:
+        # get api에 Optional 필드가 None일 때 제외하고 넘기기
+        request_body = request.model_dump(exclude_none=True)
+        # TODO: Search in cache first (REDIS)
+
+        response = amadeus_flight_service.search_flights_get(request_body)
+        return response
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Flight search failed: {str(e)}")
+
+
+@router.post("/shopping/flight-offers/pricing")
+async def confirm_price(request: FlightOffer):
+    try:
+        request_body = request.model_dump()
+        response = amadeus_flight_service.confirm_price(request_body)
+        return response
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Price confirmation failed: {str(e)}"
+        )
+
+
+@router.post("/booking/flight-orders")
+async def flight_order(
+    request: FlightOrderRequest, current_user: UserInDB = Depends(get_current_user)
+):
+    try:
+        request_body = request.model_dump(by_alias=True)
+        response = amadeus_flight_service.create_flight_order(request_body)
+        return response
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Booking failed, try again later.: {str(e)}"
+        )
