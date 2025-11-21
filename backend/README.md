@@ -40,9 +40,16 @@ fastapi dev --port 8080 # 캐쉬때문에 db만 docker로 켜놓고, fastapi dev
 - 401: user login시 잘못된 email or 잘못된 password in login
 
 
-### git
+### git 참고
 - commit이후 작성한 것 중 일부폴더만 롤백
 ```shell
 git status
 git restore `crud/user.py`
 ```
+
+
+### Start
+
+1. git clone
+2. docker, docker-compose 설치
+3. backend 폴더에서 .env 파일 생성 및 환경변수 작성

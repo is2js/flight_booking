@@ -61,8 +61,6 @@ dependencies = [
     { name = "fastapi-mail" },
     { name = "httpx" },
     { name = "passlib", extra = ["bcrypt"] },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "psycopg2" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
